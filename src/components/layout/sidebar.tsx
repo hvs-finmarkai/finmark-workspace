@@ -19,6 +19,7 @@ import {
   Shield,
   BarChart3,
   UserCog,
+  ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserRole } from "@/types";
@@ -60,9 +61,10 @@ export function Sidebar({ user }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
 
-  const isAdmin =
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isAdminUser =
     user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
-  const navItems = isAdmin ? adminNavItems : employeeNavItems;
+  const navItems = isAdminRoute ? adminNavItems : employeeNavItems;
 
   return (
     <>
@@ -121,6 +123,30 @@ export function Sidebar({ user }: SidebarProps) {
               </Link>
             );
           })}
+
+          {!isAdminRoute && isAdminUser && (
+            <div className="pt-4 mt-4 border-t border-[hsl(var(--border))]">
+              <Link
+                href="/admin"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))] transition-colors"
+              >
+                <ArrowRightLeft className="h-5 w-5" />
+                <span>Switch to Admin</span>
+              </Link>
+            </div>
+          )}
+
+          {isAdminRoute && (
+            <div className="pt-4 mt-4 border-t border-[hsl(var(--border))]">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))] transition-colors"
+              >
+                <ArrowRightLeft className="h-5 w-5" />
+                <span>Switch to Employee</span>
+              </Link>
+            </div>
+          )}
         </nav>
 
         <div className="border-t border-[hsl(var(--border))] p-3">

@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Logo from '@/components/logo';
 
-function LoginForm() {
+function AdminLoginForm() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const [email, setEmail] = useState('');
@@ -16,7 +16,7 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSignIn = () => {
-    signIn('google', { callbackUrl: '/dashboard' });
+    signIn('google', { callbackUrl: '/admin' });
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -37,16 +37,16 @@ function LoginForm() {
     await signIn('credentials', {
       email,
       password,
-      callbackUrl: '/dashboard',
+      callbackUrl: '/admin',
     });
     setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-[#0a0a1a] via-[#1a1035] to-[#0d1025]">
-      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-purple-600/20 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-600/15 blur-[120px] pointer-events-none" />
-      <div className="absolute top-[30%] right-[10%] w-[300px] h-[300px] rounded-full bg-blue-600/10 blur-[100px] pointer-events-none" />
+    <div className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-[#0a0a1a] via-[#0d1a35] to-[#0a1025]">
+      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-600/20 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-600/20 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[30%] right-[10%] w-[300px] h-[300px] rounded-full bg-cyan-600/10 blur-[100px] pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -63,10 +63,10 @@ function LoginForm() {
           >
             <Logo size="lg" showText={true} />
             <h1 className="mt-6 text-2xl font-semibold text-white text-center">
-              Welcome to Finmark Workspace
+              Finmark Workspace - Admin Portal
             </h1>
             <p className="mt-2 text-sm text-gray-400 text-center">
-              Sign in with your Finmark account to continue
+              Sign in to access the administration panel
             </p>
           </motion.div>
 
@@ -76,7 +76,7 @@ function LoginForm() {
               animate={{ opacity: 1, scale: 1 }}
               className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center"
             >
-              {validationError || (error === 'CredentialsSignin' ? 'Invalid email or password' : 'An error occurred. Please try again.')}
+              {validationError || (error === 'AccessDenied' ? 'Access denied. You are not authorized as an administrator.' : error === 'CredentialsSignin' ? 'Invalid email or password' : 'An error occurred. Please try again.')}
             </motion.div>
           )}
 
@@ -120,14 +120,14 @@ function LoginForm() {
             <div>
               <input
                 type="email"
-                placeholder="Email address"
+                placeholder="Admin email address"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
                   setValidationError('');
                   if (!showEmailLogin) setShowEmailLogin(true);
                 }}
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/25 transition-all duration-200"
+                className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition-all duration-200"
               />
             </div>
 
@@ -142,7 +142,7 @@ function LoginForm() {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/25 transition-all duration-200"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition-all duration-200"
                 />
               </motion.div>
             )}
@@ -150,7 +150,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium hover:from-purple-500 hover:to-indigo-500 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-500 hover:to-indigo-500 transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -169,24 +169,13 @@ function LoginForm() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-            className="mt-4 text-center"
-          >
-            <a href="#" className="text-sm text-purple-400 hover:text-purple-300 transition-colors duration-200">
-              Forgot Password?
-            </a>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.5 }}
             className="mt-6 pt-6 border-t border-white/[0.05]"
           >
-            <p className="text-xs text-gray-500 text-center">Only @finmark.ai accounts are allowed</p>
-            <p className="mt-3 text-xs text-gray-600 text-center">Secure • Private • Only Finmark Employees</p>
-            <a href="/admin/login" className="mt-4 block text-xs text-purple-400 hover:text-purple-300 text-center transition-colors duration-200">
-              Admin Login →
+            <p className="text-xs text-gray-500 text-center">Only authorized administrators can access this portal</p>
+            <p className="mt-3 text-xs text-gray-600 text-center">Secure • Private • Admin Access Only</p>
+            <a href="/login" className="mt-4 block text-xs text-blue-400 hover:text-blue-300 text-center transition-colors duration-200">
+              ← Employee Login
             </a>
           </motion.div>
         </div>
@@ -204,14 +193,14 @@ function LoginForm() {
   );
 }
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#0a0a1a] via-[#1a1035] to-[#0d1025]">
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#0a0a1a] via-[#0d1a35] to-[#0a1025]">
         <div className="animate-pulse text-white/50">Loading...</div>
       </div>
     }>
-      <LoginForm />
+      <AdminLoginForm />
     </Suspense>
   );
 }

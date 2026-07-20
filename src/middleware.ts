@@ -1,7 +1,7 @@
 import { auth } from './lib/auth';
 import { NextResponse } from 'next/server';
 
-const publicPaths = ['/', '/login', '/api/auth', '/_next', '/favicon.ico'];
+const publicPaths = ['/', '/login', '/admin/login', '/api/auth', '/_next', '/favicon.ico'];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -13,7 +13,8 @@ export default auth((req) => {
   }
 
   if (!req.auth) {
-    const loginUrl = new URL('/login', req.nextUrl.origin);
+    const isAdminRoute = pathname.startsWith('/admin');
+    const loginUrl = new URL(isAdminRoute ? '/admin/login' : '/login', req.nextUrl.origin);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -22,7 +23,9 @@ export default auth((req) => {
     const role = req.auth.user?.role;
 
     if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin));
+      const adminLoginUrl = new URL('/admin/login', req.nextUrl.origin);
+      adminLoginUrl.searchParams.set('error', 'AccessDenied');
+      return NextResponse.redirect(adminLoginUrl);
     }
   }
 
