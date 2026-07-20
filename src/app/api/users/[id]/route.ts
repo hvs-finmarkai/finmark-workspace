@@ -47,6 +47,11 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     const body = await req.json();
     const { name, phone, designation, department, role, skills } = body;
 
+    // Only ADMIN or SUPER_ADMIN can assign roles
+    if (role && session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ error: "Only admins can assign roles" }, { status: 403 });
+    }
+
     const user = await prisma.user.update({
       where: { id },
       data: {

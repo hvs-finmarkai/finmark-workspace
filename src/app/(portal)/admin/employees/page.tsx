@@ -34,6 +34,7 @@ const mockEmployees = [
 
 const departments = ["All", "Engineering", "Design", "Marketing", "Sales", "HR", "Finance"];
 const roles = ["All", "SUPER_ADMIN", "ADMIN", "MANAGER", "EMPLOYEE", "HR"];
+const assignableRoles = ["SUPER_ADMIN", "ADMIN", "MANAGER", "EMPLOYEE", "HR"];
 const statusOptions = ["All", "Active", "Inactive"];
 const PAGE_SIZE = 6;
 
@@ -158,7 +159,7 @@ export default function EmployeesPage() {
               <div>
                 <label className="text-sm font-medium">Role</label>
                 <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className="flex h-10 w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--secondary))] px-3 py-2 text-sm text-[hsl(var(--foreground))]">
-                  {roles.filter(r => r !== "All").map((r) => <option key={r} value={r}>{r}</option>)}
+                  {assignableRoles.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div>
@@ -288,7 +289,7 @@ export default function EmployeesPage() {
               <div>
                 <label className="text-sm font-medium">Role</label>
                 <select value={editEmployee.role} onChange={(e) => setEditEmployee({ ...editEmployee, role: e.target.value })} className="flex h-10 w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--secondary))] px-3 py-2 text-sm text-[hsl(var(--foreground))]">
-                  {roles.filter(r => r !== "All").map((r) => <option key={r} value={r}>{r}</option>)}
+                  {assignableRoles.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div>
