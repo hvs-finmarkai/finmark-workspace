@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     }
 
     const body = await req.json();
-    const { name, phone, designation, department, role } = body;
+    const { name, phone, designation, department, role, skills } = body;
 
     const user = await prisma.user.update({
       where: { id },
@@ -55,6 +55,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         ...(designation && { designation }),
         ...(department && { department }),
         ...(role && { role }),
+        ...(skills !== undefined && { skills }),
       },
     });
 

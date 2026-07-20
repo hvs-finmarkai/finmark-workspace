@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Users, UserCheck, Shield, X, Clock, Trash2, Download, LogIn, LogOut as LogOutIcon, RefreshCw, Phone, Mail, Briefcase, Building } from 'lucide-react';
+import { LogOut, Users, UserCheck, Shield, X, Clock, Trash2, Download, LogIn, LogOut as LogOutIcon, RefreshCw, Phone, Mail, Briefcase, Building, Pencil, Save } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import Logo from '@/components/logo';
 
@@ -117,6 +117,41 @@ export function AdminDashboardView({ users, totalEmployees, availableCount, admi
   const [userLogs, setUserLogs] = useState<ActivityLogEntry[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [userList, setUserList] = useState(users);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', designation: '', department: '', phone: '', skills: '', role: '' });
+  const [saving, setSaving] = useState(false);
+
+  const startEditing = (user: User) => {
+    setEditForm({
+      name: user.name || '',
+      designation: user.designation || '',
+      department: user.department || '',
+      phone: user.phone || '',
+      skills: user.skills || '',
+      role: user.role,
+    });
+    setEditing(true);
+  };
+
+  const saveUser = async () => {
+    if (!selectedUser) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/users/${selectedUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setUserList(userList.map(u => u.id === selectedUser.id ? { ...u, ...updated } : u));
+        setSelectedUser({ ...selectedUser, ...updated });
+        setEditing(false);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const deleteUser = async (userId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -364,79 +399,137 @@ export function AdminDashboardView({ users, totalEmployees, availableCount, admi
               {/* Modal Header */}
               <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between bg-white dark:bg-[#0f0f2a]">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Employee Profile</h3>
-                <button onClick={() => setSelectedUser(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
-                  <X className="w-4 h-4 text-gray-500" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {!editing && (
+                    <button onClick={() => startEditing(selectedUser)} className="p-2 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-lg transition-colors" title="Edit user">
+                      <Pencil className="w-4 h-4 text-purple-500" />
+                    </button>
+                  )}
+                  <button onClick={() => { setSelectedUser(null); setEditing(false); }} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
+                    <X className="w-4 h-4 text-gray-500" />
+                  </button>
+                </div>
               </div>
 
               <div className="overflow-y-auto h-[calc(100vh-65px)]">
                 {/* User Profile Section */}
                 <div className="p-6 border-b border-gray-200 dark:border-white/10">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/10 flex-shrink-0">
-                      {selectedUser.image ? (
-                        <img src={selectedUser.image} alt={selectedUser.name || ''} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xl font-bold">
-                          {(selectedUser.name || selectedUser.email)[0].toUpperCase()}
+                  {editing ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400 mb-1">Name</label>
+                        <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0a0a1a] border border-gray-200 dark:border-white/10 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400 mb-1">Designation</label>
+                        <input value={editForm.designation} onChange={(e) => setEditForm({ ...editForm, designation: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0a0a1a] border border-gray-200 dark:border-white/10 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400 mb-1">Department</label>
+                        <select value={editForm.department} onChange={(e) => setEditForm({ ...editForm, department: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0a0a1a] border border-gray-200 dark:border-white/10 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30">
+                          <option value="">Select department</option>
+                          {['Engineering', 'Sales', 'HR', 'Finance', 'Marketing', 'Design', 'Operations'].map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400 mb-1">Phone</label>
+                        <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0a0a1a] border border-gray-200 dark:border-white/10 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400 mb-1">Skills (comma separated)</label>
+                        <input value={editForm.skills} onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0a0a1a] border border-gray-200 dark:border-white/10 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400 mb-1">Role</label>
+                        <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0a0a1a] border border-gray-200 dark:border-white/10 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30">
+                          <option value="EMPLOYEE">Employee</option>
+                          <option value="MANAGER">Manager</option>
+                          <option value="HR">HR</option>
+                          <option value="ADMIN">Admin</option>
+                          <option value="SUPER_ADMIN">Super Admin</option>
+                        </select>
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <button onClick={saveUser} disabled={saving} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg hover:from-purple-500 hover:to-indigo-500 transition-all disabled:opacity-50">
+                          <Save className="w-3.5 h-3.5" />
+                          {saving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                        <button onClick={() => setEditing(false)} className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/10 flex-shrink-0">
+                          {selectedUser.image ? (
+                            <img src={selectedUser.image} alt={selectedUser.name || ''} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xl font-bold">
+                              {(selectedUser.name || selectedUser.email)[0].toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white truncate">{selectedUser.name || 'Unnamed'}</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{selectedUser.designation || 'No designation'}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {(() => {
+                              const s = getStatusBadge(selectedUser.status?.status || 'OFFLINE');
+                              return (
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${s.badgeClass}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${s.dotClass}`} />
+                                  {s.label}
+                                </span>
+                              );
+                            })()}
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getRoleBadge(selectedUser.role)}`}>
+                              {selectedUser.role.replace('_', ' ')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Contact Info */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="text-sm text-gray-600 dark:text-gray-300">{selectedUser.email}</span>
+                        </div>
+                        {selectedUser.department && (
+                          <div className="flex items-center gap-2">
+                            <Building className="w-3.5 h-3.5 text-gray-400" />
+                            <span className="text-sm text-gray-600 dark:text-gray-300">{selectedUser.department}</span>
+                          </div>
+                        )}
+                        {selectedUser.phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-3.5 h-3.5 text-gray-400" />
+                            <span className="text-sm text-gray-600 dark:text-gray-300">{selectedUser.phone}</span>
+                          </div>
+                        )}
+                        {selectedUser.designation && (
+                          <div className="flex items-center gap-2">
+                            <Briefcase className="w-3.5 h-3.5 text-gray-400" />
+                            <span className="text-sm text-gray-600 dark:text-gray-300">{selectedUser.designation}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Skills */}
+                      {selectedUser.skills && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {selectedUser.skills.split(',').map(s => s.trim()).filter(Boolean).map((skill) => (
+                            <span key={skill} className="px-2.5 py-1 text-xs font-medium rounded-full bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300">
+                              {skill}
+                            </span>
+                          ))}
                         </div>
                       )}
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white truncate">{selectedUser.name || 'Unnamed'}</h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{selectedUser.designation || 'No designation'}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {(() => {
-                          const s = getStatusBadge(selectedUser.status?.status || 'OFFLINE');
-                          return (
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${s.badgeClass}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${s.dotClass}`} />
-                              {s.label}
-                            </span>
-                          );
-                        })()}
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getRoleBadge(selectedUser.role)}`}>
-                          {selectedUser.role.replace('_', ' ')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Contact Info */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-3.5 h-3.5 text-gray-400" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300">{selectedUser.email}</span>
-                    </div>
-                    {selectedUser.department && (
-                      <div className="flex items-center gap-2">
-                        <Building className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="text-sm text-gray-600 dark:text-gray-300">{selectedUser.department}</span>
-                      </div>
-                    )}
-                    {selectedUser.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="text-sm text-gray-600 dark:text-gray-300">{selectedUser.phone}</span>
-                      </div>
-                    )}
-                    {selectedUser.designation && (
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="text-sm text-gray-600 dark:text-gray-300">{selectedUser.designation}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Skills */}
-                  {selectedUser.skills && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {selectedUser.skills.split(',').map(s => s.trim()).filter(Boolean).map((skill) => (
-                        <span key={skill} className="px-2.5 py-1 text-xs font-medium rounded-full bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300">
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
+                    </>
                   )}
                 </div>
 
