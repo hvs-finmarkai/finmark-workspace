@@ -10,12 +10,20 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { status } = body;
+    const { status, statusMessage } = body;
 
     const updated = await prisma.status.upsert({
       where: { userId: session.user.id },
-      update: { status, lastSeen: new Date() },
-      create: { userId: session.user.id, status, lastSeen: new Date() },
+      update: { status, statusMessage: statusMessage || null, lastSeen: new Date() },
+      create: { userId: session.user.id, status, statusMessage: statusMessage || null, lastSeen: new Date() },
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        userId: session.user.id,
+        action: 'STATUS_CHANGE',
+        details: `Status: ${status}${statusMessage ? ' - ' + statusMessage : ''}`,
+      },
     });
 
     return NextResponse.json(updated);

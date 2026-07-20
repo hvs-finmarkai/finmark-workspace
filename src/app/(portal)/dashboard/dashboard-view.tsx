@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { signOut } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import { LogOut, Circle, RefreshCw } from 'lucide-react';
+import { LogOut, RefreshCw } from 'lucide-react';
 import Logo from '@/components/logo';
 
 interface Status {
@@ -32,11 +32,57 @@ interface DashboardViewProps {
   isAdmin?: boolean;
 }
 
+const STATUS_OPTIONS = [
+  { value: 'AVAILABLE', label: 'Available' },
+  { value: 'BUSY', label: 'Busy' },
+  { value: 'MEETING', label: 'In Meeting' },
+  { value: 'OFFLINE', label: 'Offline' },
+] as const;
+
+function getStatusColor(status: string) {
+  switch (status) {
+    case 'AVAILABLE':
+      return 'bg-green-500';
+    case 'BUSY':
+      return 'bg-red-500';
+    case 'MEETING':
+      return 'bg-violet-500';
+    default:
+      return 'bg-gray-400';
+  }
+}
+
+function getStatusBadgeClasses(status: string) {
+  switch (status) {
+    case 'AVAILABLE':
+      return 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400';
+    case 'BUSY':
+      return 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400';
+    case 'MEETING':
+      return 'bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400';
+    default:
+      return 'bg-gray-100 text-gray-500 dark:bg-gray-500/10 dark:text-gray-400';
+  }
+}
+
+function getStatusLabel(status: string) {
+  switch (status) {
+    case 'AVAILABLE':
+      return 'Available';
+    case 'BUSY':
+      return 'Busy';
+    case 'MEETING':
+      return 'In Meeting';
+    default:
+      return 'Offline';
+  }
+}
+
 export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin }: DashboardViewProps) {
   const [myStatus, setMyStatus] = useState(currentUser?.status?.status || 'OFFLINE');
+  const [statusMessage, setStatusMessage] = useState(currentUser?.status?.statusMessage || '');
   const [loading, setLoading] = useState(false);
   const [allUsers, setAllUsers] = useState(initialUsers);
-  const [lastRefresh, setLastRefresh] = useState(new Date());
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -44,7 +90,6 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin }: 
       if (res.ok) {
         const data = await res.json();
         setAllUsers(data);
-        setLastRefresh(new Date());
       }
     } catch {}
   }, []);
@@ -54,14 +99,13 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin }: 
     return () => clearInterval(interval);
   }, [fetchUsers]);
 
-  const toggleStatus = async () => {
-    const newStatus = myStatus === 'AVAILABLE' ? 'OFFLINE' : 'AVAILABLE';
+  const updateStatus = async (newStatus: string, message?: string) => {
     setLoading(true);
     try {
       const res = await fetch('/api/status', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: newStatus, statusMessage: message ?? statusMessage }),
       });
       if (res.ok) {
         setMyStatus(newStatus);
@@ -72,8 +116,18 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin }: 
     }
   };
 
-  const isAvailable = myStatus === 'AVAILABLE';
+  const handleStatusClick = (status: string) => {
+    if (status === myStatus) return;
+    updateStatus(status);
+  };
+
+  const handleMessageSubmit = () => {
+    updateStatus(myStatus, statusMessage);
+  };
+
   const availableCount = allUsers.filter(u => u.status?.status === 'AVAILABLE').length;
+  const busyCount = allUsers.filter(u => u.status?.status === 'BUSY').length;
+  const meetingCount = allUsers.filter(u => u.status?.status === 'MEETING').length;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a1a]">
@@ -90,7 +144,7 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin }: 
               {currentUser?.name || currentUser?.email}
             </span>
             <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
+              onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); signOut({ callbackUrl: '/login' }); }}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <LogOut className="w-4 h-4" />
@@ -107,21 +161,47 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin }: 
           className="bg-white dark:bg-[#161631] rounded-2xl border border-gray-200 dark:border-gray-800 p-6"
         >
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Status</h2>
-          <div className="flex items-center gap-4">
-            <div className={`w-3 h-3 rounded-full ${isAvailable ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {isAvailable ? 'Available' : 'Offline'}
-            </span>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleStatusClick(opt.value)}
+                disabled={loading}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all disabled:opacity-50 ${
+                  myStatus === opt.value
+                    ? opt.value === 'AVAILABLE'
+                      ? 'bg-green-500 text-white shadow-lg shadow-green-500/25'
+                      : opt.value === 'BUSY'
+                        ? 'bg-red-500 text-white shadow-lg shadow-red-500/25'
+                        : opt.value === 'MEETING'
+                          ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/25'
+                          : 'bg-gray-500 text-white shadow-lg shadow-gray-500/25'
+                    : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={statusMessage}
+              onChange={(e) => setStatusMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleMessageSubmit();
+              }}
+              placeholder="What are you working on?"
+              className="flex-1 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#0a0a1a] text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            />
             <button
-              onClick={toggleStatus}
+              onClick={handleMessageSubmit}
               disabled={loading}
-              className={`ml-auto px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                isAvailable
-                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                  : 'bg-green-500 text-white hover:bg-green-600 shadow-lg shadow-green-500/25'
-              } disabled:opacity-50`}
+              className="px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
             >
-              {loading ? '...' : isAvailable ? 'Go Offline' : 'Go Available'}
+              Set
             </button>
           </div>
         </motion.section>
@@ -138,7 +218,7 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin }: 
                 Team Availability
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {availableCount} available • {allUsers.length - availableCount} offline • Updates live
+                {availableCount} available • {busyCount} busy • {meetingCount} in meeting • Updates live
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -152,7 +232,7 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin }: 
           ) : (
             <div className="space-y-2">
               {allUsers.map((user) => {
-                const userAvailable = user.status?.status === 'AVAILABLE';
+                const userStatus = user.status?.status || 'OFFLINE';
                 return (
                   <div
                     key={user.id}
@@ -164,7 +244,7 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin }: 
                           {(user.name || user.email).charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-[#161631] ${userAvailable ? 'bg-green-500' : 'bg-gray-400'}`} />
+                      <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-[#161631] ${getStatusColor(userStatus)}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -173,16 +253,18 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin }: 
                           <span className="ml-2 text-xs text-purple-500">(You)</span>
                         )}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {user.designation || user.email}
-                      </p>
+                      {user.status?.statusMessage ? (
+                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate italic">
+                          {user.status.statusMessage}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {user.designation || user.email}
+                        </p>
+                      )}
                     </div>
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                      userAvailable
-                        ? 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400'
-                        : 'bg-gray-100 text-gray-500 dark:bg-gray-500/10 dark:text-gray-400'
-                    }`}>
-                      {userAvailable ? 'Available' : 'Offline'}
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${getStatusBadgeClasses(userStatus)}`}>
+                      {getStatusLabel(userStatus)}
                     </span>
                   </div>
                 );

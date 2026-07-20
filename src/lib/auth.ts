@@ -79,7 +79,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
         }
 
+        await prisma.activityLog.create({
+          data: {
+            userId: existingUser.id,
+            action: 'LOGIN',
+            details: 'Logged in via Google',
+          },
+        });
+
         return true;
+      }
+
+      if (user.id) {
+        await prisma.activityLog.create({
+          data: {
+            userId: user.id,
+            action: 'LOGIN',
+            details: 'Logged in via password',
+          },
+        });
       }
 
       return true;
