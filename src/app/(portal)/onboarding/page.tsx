@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
+import { Camera } from 'lucide-react';
 
 interface OnboardingForm {
   name: string;
@@ -30,6 +31,8 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<OnboardingForm>({
     defaultValues: {
@@ -42,6 +45,30 @@ export default function OnboardingPage() {
     },
   });
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Image must be less than 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+      setError('');
+    };
+    reader.readAsDataURL(file);
+  };
+
   const onSubmit = async (data: OnboardingForm) => {
     setIsSubmitting(true);
     setError('');
@@ -50,7 +77,10 @@ export default function OnboardingPage() {
       const res = await fetch('/api/onboarding', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          image: photoPreview || undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -65,6 +95,8 @@ export default function OnboardingPage() {
       setIsSubmitting(false);
     }
   };
+
+  const initials = (session?.user?.name || session?.user?.email || 'U')[0].toUpperCase();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gradient-to-br from-[#0a0a1a] via-[#1a1035] to-[#0d1025]">
@@ -113,6 +145,42 @@ export default function OnboardingPage() {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-4"
           >
+            {/* Photo Upload */}
+            <div className="flex justify-center mb-6">
+              <div
+                className="relative group cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/20 group-hover:border-purple-500/50 transition-all duration-300 shadow-lg shadow-purple-500/10">
+                  {photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      alt="Profile preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center">
+                      <span className="text-2xl font-bold text-white">{initials}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center border-2 border-[#0a0a1a] shadow-lg">
+                  <Camera className="w-3.5 h-3.5 text-white" />
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                />
+              </div>
+            </div>
+            <p className="text-center text-xs text-gray-500 -mt-2 mb-4">Click to upload photo</p>
+
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1.5">Full Name</label>
               <input

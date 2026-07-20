@@ -12,12 +12,6 @@ export default async function AdminPage() {
     orderBy: { createdAt: 'desc' },
   });
 
-  const activityLogs = await prisma.activityLog.findMany({
-    take: 50,
-    orderBy: { createdAt: 'desc' },
-    include: { user: { select: { id: true, name: true, email: true } } },
-  });
-
   const totalEmployees = users.length;
   const availableCount = users.filter(u => u.status?.status === 'AVAILABLE').length;
 
@@ -27,7 +21,6 @@ export default async function AdminPage() {
       totalEmployees={totalEmployees}
       availableCount={availableCount}
       adminName={session.user.name || 'Admin'}
-      activityLogs={JSON.parse(JSON.stringify(activityLogs))}
     />
   );
 }

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { signOut } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import { LogOut, RefreshCw, Settings } from 'lucide-react';
+import { LogOut, RefreshCw, Settings, Camera } from 'lucide-react';
 import Logo from '@/components/logo';
 
 interface Status {
@@ -89,6 +89,39 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin, ha
   const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading] = useState(false);
   const [allUsers, setAllUsers] = useState(initialUsers);
+  const [userPhoto, setUserPhoto] = useState<string | null>(currentUser?.image || null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 2 * 1024 * 1024) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+      setPhotoUploading(true);
+      try {
+        const res = await fetch('/api/onboarding', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            designation: currentUser?.designation || 'Employee',
+            image: base64,
+          }),
+        });
+        if (res.ok) {
+          setUserPhoto(base64);
+        }
+      } finally {
+        setPhotoUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -146,9 +179,39 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin, ha
                 Admin Panel
               </a>
             )}
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{currentUser?.name || 'Employee'}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.email}</p>
+            <div className="flex items-center gap-3">
+              <div className="relative group cursor-pointer" onClick={() => photoInputRef.current?.click()}>
+                <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white/20 group-hover:border-purple-500/50 transition-all">
+                  {userPhoto ? (
+                    <img src={userPhoto} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                      <span className="text-white text-xs font-semibold">
+                        {(currentUser?.name || currentUser?.email || 'U')[0].toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="w-3.5 h-3.5 text-white" />
+                </div>
+                {photoUploading && (
+                  <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+              </div>
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{currentUser?.name || 'Employee'}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.email}</p>
+              </div>
             </div>
             <button
               onClick={() => setShowSettings(true)}
@@ -252,10 +315,14 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin, ha
                     className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-[#1a1a3a] transition-colors"
                   >
                     <div className="relative">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white text-sm font-semibold">
-                          {(user.name || user.email).charAt(0).toUpperCase()}
-                        </span>
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                        {user.image ? (
+                          <img src={user.image} alt={user.name || ''} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-white text-sm font-semibold">
+                            {(user.name || user.email).charAt(0).toUpperCase()}
+                          </span>
+                        )}
                       </div>
                       <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-[#161631] ${getStatusColor(userStatus)}`} />
                     </div>

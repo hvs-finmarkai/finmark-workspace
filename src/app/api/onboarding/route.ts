@@ -10,7 +10,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { name, designation, department, phone, skills, about } = body;
+    const { name, designation, department, phone, skills, about, image } = body;
 
     if (!designation) {
       return NextResponse.json(
@@ -28,6 +28,7 @@ export async function PATCH(request: Request) {
         ...(phone && { phone }),
         ...(skills && { skills }),
         ...(about && { about }),
+        ...(image && { image }),
       },
     });
 
