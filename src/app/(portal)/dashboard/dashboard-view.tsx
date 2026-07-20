@@ -146,9 +146,10 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin, ha
                 Admin Panel
               </a>
             )}
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {currentUser?.name || currentUser?.email}
-            </span>
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{currentUser?.name || 'Employee'}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.email}</p>
+            </div>
             <button
               onClick={() => setShowSettings(true)}
               className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
