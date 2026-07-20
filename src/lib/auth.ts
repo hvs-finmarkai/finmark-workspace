@@ -1,17 +1,14 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import prisma from './prisma';
 import bcrypt from 'bcryptjs';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
       credentials: {
@@ -72,13 +69,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return false;
         }
 
-        if (!existingUser.googleEnabled) {
-          await prisma.user.update({
-            where: { email },
-            data: { googleEnabled: true },
-          });
-        }
-
         await prisma.activityLog.create({
           data: {
             userId: existingUser.id,
@@ -102,24 +92,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return true;
     },
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = (user as any).role;
-        token.id = user.id;
+    async jwt({ token, user, account }) {
+      // On first sign-in, set role and id from DB
+      if (account && user) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email! },
+        });
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.role = dbUser.role;
+          token.email = dbUser.email;
+          token.name = dbUser.name;
+        }
       }
 
+      // If role is missing (shouldn't happen), fetch from DB
       if (token.email && !token.role) {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email },
         });
-
         if (dbUser) {
           token.role = dbUser.role;
           token.id = dbUser.id;
         }
       }
 
-      // Keep token minimal to avoid header size issues
+      // Return minimal token
       return {
         id: token.id,
         email: token.email,
@@ -136,7 +134,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as string;
         session.user.id = token.id as string;
       }
-
       return session;
     },
   },
