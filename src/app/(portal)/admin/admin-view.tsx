@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import { LogOut, Users, UserCheck, Shield, X, Clock } from 'lucide-react';
+import { LogOut, Users, UserCheck, Shield, X, Clock, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Logo from '@/components/logo';
 
@@ -46,6 +46,16 @@ export function AdminDashboardView({ users, totalEmployees, availableCount, admi
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userLogs, setUserLogs] = useState<ActivityLogEntry[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [userList, setUserList] = useState(users);
+
+  const deleteUser = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to remove this employee?')) return;
+    const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+    if (res.ok) {
+      setUserList(userList.filter(u => u.id !== userId));
+    }
+  };
 
   const viewUserHistory = async (user: User) => {
     setSelectedUser(user);
@@ -133,11 +143,11 @@ export function AdminDashboardView({ users, totalEmployees, availableCount, admi
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">All Employees</h2>
           </div>
 
-          {users.length === 0 ? (
+          {userList.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">No employees registered yet</div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-white/5">
-              {users.map((user) => {
+              {userList.map((user) => {
                 const userStatus = user.status?.status || 'OFFLINE';
                 return (
                   <div key={user.id} onClick={() => viewUserHistory(user)} className="px-5 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer">
@@ -172,6 +182,13 @@ export function AdminDashboardView({ users, totalEmployees, availableCount, admi
                             : userStatus === 'MEETING' ? 'In Meeting'
                               : 'Offline'}
                       </span>
+                      <button
+                        onClick={(e) => deleteUser(user.id, e)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                        title="Remove employee"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 );

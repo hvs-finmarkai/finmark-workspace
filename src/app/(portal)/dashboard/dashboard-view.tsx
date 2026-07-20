@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { signOut } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import { LogOut, RefreshCw } from 'lucide-react';
+import { LogOut, RefreshCw, Settings } from 'lucide-react';
 import Logo from '@/components/logo';
 
 interface Status {
@@ -86,6 +86,7 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin, ha
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordMsg, setPasswordMsg] = useState('');
   const [passwordSet, setPasswordSet] = useState(hasPassword || false);
+  const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading] = useState(false);
   const [allUsers, setAllUsers] = useState(initialUsers);
 
@@ -149,6 +150,12 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin, ha
               {currentUser?.name || currentUser?.email}
             </span>
             <button
+              onClick={() => setShowSettings(true)}
+              className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+            <button
               onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); signOut({ callbackUrl: '/login' }); }}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
@@ -210,52 +217,6 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin, ha
             </button>
           </div>
         </motion.section>
-
-        {!passwordSet && (
-          <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.05 }}
-            className="bg-blue-50 dark:bg-blue-500/5 rounded-2xl border border-blue-200 dark:border-blue-500/20 p-6"
-          >
-            <h2 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-1">Set a Password</h2>
-            <p className="text-xs text-blue-700 dark:text-blue-400 mb-4">Create a password so you can login without Google next time.</p>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="password"
-                placeholder="New password (min 8 chars)"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-[#0a0a1a] border border-blue-200 dark:border-blue-500/20 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-              />
-              <input
-                type="password"
-                placeholder="Confirm password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-[#0a0a1a] border border-blue-200 dark:border-blue-500/20 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-              />
-              <button
-                onClick={async () => {
-                  setPasswordMsg('');
-                  if (newPassword.length < 8) { setPasswordMsg('Min 8 characters'); return; }
-                  if (newPassword !== confirmPassword) { setPasswordMsg('Passwords do not match'); return; }
-                  const res = await fetch('/api/auth/password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: newPassword, confirmPassword }),
-                  });
-                  if (res.ok) { setPasswordSet(true); setPasswordMsg('Password set!'); setNewPassword(''); setConfirmPassword(''); }
-                  else { setPasswordMsg('Error setting password'); }
-                }}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Set
-              </button>
-            </div>
-            {passwordMsg && <p className={`text-xs mt-2 ${passwordMsg === 'Password set!' ? 'text-green-600' : 'text-red-500'}`}>{passwordMsg}</p>}
-          </motion.section>
-        )}
 
         <motion.section
           initial={{ opacity: 0, y: 10 }}
@@ -324,6 +285,69 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin, ha
           )}
         </motion.section>
       </main>
+
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowSettings(false)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-[#161631] rounded-2xl border border-gray-200 dark:border-white/10 w-full max-w-md mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Settings</h2>
+              <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
+                <span className="text-gray-500 text-lg">×</span>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                  {passwordSet ? 'Change Password' : 'Set Password'}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  {passwordSet ? 'Update your login password.' : 'Create a password to login without Google.'}
+                </p>
+                <div className="space-y-2">
+                  <input
+                    type="password"
+                    placeholder="New password (min 8 chars)"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0a0a1a] border border-gray-200 dark:border-white/10 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Confirm password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0a0a1a] border border-gray-200 dark:border-white/10 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  />
+                  <button
+                    onClick={async () => {
+                      setPasswordMsg('');
+                      if (newPassword.length < 8) { setPasswordMsg('Min 8 characters'); return; }
+                      if (newPassword !== confirmPassword) { setPasswordMsg('Passwords do not match'); return; }
+                      const res = await fetch('/api/auth/password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: newPassword, confirmPassword }),
+                      });
+                      if (res.ok) { setPasswordSet(true); setPasswordMsg('Password saved!'); setNewPassword(''); setConfirmPassword(''); }
+                      else { setPasswordMsg('Error setting password'); }
+                    }}
+                    className="w-full px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    {passwordSet ? 'Update Password' : 'Set Password'}
+                  </button>
+                  {passwordMsg && <p className={`text-xs ${passwordMsg.includes('saved') ? 'text-green-600' : 'text-red-500'}`}>{passwordMsg}</p>}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
