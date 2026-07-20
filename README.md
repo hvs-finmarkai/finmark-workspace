@@ -1,36 +1,150 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Finmark Workspace
+
+Internal Employee Management & Collaboration Platform for Finmark.ai
+
+## Overview
+
+A production-ready SaaS platform where employees can securely log in, update their availability, view teammates, receive announcements, and collaborate. Administrators manage employees, departments, announcements, roles, and analytics from a separate portal.
+
+## Tech Stack
+
+- **Frontend:** Next.js 15, React 19, TypeScript, Tailwind CSS
+- **UI Components:** Custom component library (shadcn-inspired)
+- **Animations:** Framer Motion
+- **Backend:** Next.js API Routes
+- **Database:** PostgreSQL via Prisma ORM
+- **Realtime:** Supabase Realtime
+- **Authentication:** Auth.js (NextAuth v5) with Google OAuth + Credentials
+- **State Management:** Zustand
+- **Charts:** Recharts
+- **Tables:** TanStack Table
+- **Forms:** React Hook Form + Zod
+- **Icons:** Lucide React
+- **Hosting:** Vercel
+
+## Features
+
+### Authentication
+- Google OAuth (primary, @finmark.ai only)
+- Optional password creation after first Google login
+- Role-based access control (Super Admin, Admin, Manager, Employee, HR)
+- Middleware-protected routes
+
+### Employee Portal
+- Dashboard with status, projects, meetings, announcements
+- Real-time status updates (Available, Busy, Away, Meeting, DND, Offline)
+- Team Directory with search and filters
+- Profile management with security settings
+- Notifications center
+- Project tracking with progress bars
+- Calendar view
+- Dark/Light mode
+
+### Admin Portal
+- Analytics dashboard with live employee status
+- Employee management (CRUD, role assignment)
+- Department management
+- Announcement system with priority levels
+- Role & permission management
+- Reports (Daily/Weekly/Monthly, CSV/PDF export)
+- Activity logs
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+
+- PostgreSQL database (or Supabase)
+- Google Cloud Console project (for OAuth)
 
+### Setup
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/hvs-finmarkai/finmark-workspace.git
+cd finmark-workspace
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Copy environment variables:
+```bash
+cp .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Configure `.env` with your credentials:
+- `DATABASE_URL` - PostgreSQL connection string
+- `DIRECT_URL` - Direct database URL (for migrations)
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key
+- `NEXTAUTH_URL` - App URL (http://localhost:3000)
+- `NEXTAUTH_SECRET` - Random secret string
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
 
-## Learn More
+5. Generate Prisma client and run migrations:
+```bash
+npx prisma generate
+npx prisma db push
+```
 
-To learn more about Next.js, take a look at the following resources:
+6. Start the development server:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+src/
+├── app/
+│   ├── (portal)/          # Authenticated routes
+│   │   ├── admin/         # Admin portal pages
+│   │   ├── dashboard/     # Employee dashboard
+│   │   ├── team/          # Team directory
+│   │   ├── profile/       # User profile
+│   │   ├── notifications/ # Notifications
+│   │   ├── announcements/ # Announcements
+│   │   ├── projects/      # Projects
+│   │   ├── calendar/      # Calendar
+│   │   └── settings/      # Settings
+│   ├── api/               # API routes
+│   └── login/             # Login page
+├── components/
+│   ├── dashboard/         # Dashboard widgets
+│   ├── layout/            # Sidebar, TopBar
+│   └── ui/                # Reusable UI components
+├── hooks/                 # Custom React hooks
+├── lib/                   # Utilities, auth, prisma
+├── store/                 # Zustand stores
+└── types/                 # TypeScript types
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Security
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Google OAuth only with @finmark.ai domain restriction
+- Middleware route protection
+- Role-based access control
+- bcrypt password hashing (Argon2 recommended for production)
+- HTTP-only session cookies via JWT
+- CSRF protection via Auth.js
+- Input validation with Zod
+
+## Deployment
+
+Deploy to Vercel:
+
+```bash
+npm run build
+vercel deploy --prod
+```
+
+Set all environment variables in your Vercel project settings.
+
+## License
+
+Private - Finmark.ai Internal Use Only
