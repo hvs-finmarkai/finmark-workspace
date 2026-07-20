@@ -12,9 +12,10 @@ interface StatsRowProps {
 }
 
 export function StatsRow({ loginTime, teamCount = 24, meetingsCount = 3 }: StatsRowProps) {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    setCurrentTime(new Date());
     const interval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -25,17 +26,17 @@ export function StatsRow({ loginTime, teamCount = 24, meetingsCount = 3 }: Stats
     {
       icon: Clock,
       label: "Current Time",
-      value: currentTime.toLocaleTimeString("en-IN", {
+      value: currentTime ? currentTime.toLocaleTimeString("en-IN", {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
         hour12: true,
-      }),
-      sublabel: currentTime.toLocaleDateString("en-IN", {
+      }) : "--:--:--",
+      sublabel: currentTime ? currentTime.toLocaleDateString("en-IN", {
         weekday: "long",
         day: "numeric",
         month: "short",
-      }),
+      }) : "",
     },
     {
       icon: Timer,

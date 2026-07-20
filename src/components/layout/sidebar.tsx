@@ -13,7 +13,6 @@ import {
   FolderKanban,
   Calendar,
   Settings,
-  HelpCircle,
   LogOut,
   Menu,
   X,
@@ -44,20 +43,17 @@ const employeeNavItems: NavItem[] = [
   { label: "My Projects", href: "/projects", icon: FolderKanban },
   { label: "Calendar", href: "/calendar", icon: Calendar },
   { label: "Settings", href: "/settings", icon: Settings },
-  { label: "Help & Support", href: "/help", icon: HelpCircle },
 ];
 
 const adminNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Team Management", href: "/team", icon: Users },
-  { label: "User Management", href: "/admin/users", icon: UserCog },
-  { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-  { label: "Announcements", href: "/announcements", icon: Megaphone },
-  { label: "Projects", href: "/projects", icon: FolderKanban },
-  { label: "Calendar", href: "/calendar", icon: Calendar },
-  { label: "Admin Panel", href: "/admin", icon: Shield },
-  { label: "Settings", href: "/settings", icon: Settings },
-  { label: "Help & Support", href: "/help", icon: HelpCircle },
+  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { label: "Employees", href: "/admin/employees", icon: UserCog },
+  { label: "Departments", href: "/admin/departments", icon: Users },
+  { label: "Announcements", href: "/admin/announcements", icon: Megaphone },
+  { label: "Roles & Permissions", href: "/admin/roles", icon: Shield },
+  { label: "Reports", href: "/admin/reports", icon: BarChart3 },
+  { label: "Activity Logs", href: "/admin/activity", icon: FolderKanban },
+  { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 export function Sidebar({ user }: SidebarProps) {
