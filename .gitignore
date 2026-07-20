@@ -9,3 +9,5 @@ next-env.d.ts
 .vercel
 *.log
 ui-reference.png
+
+.vercel
