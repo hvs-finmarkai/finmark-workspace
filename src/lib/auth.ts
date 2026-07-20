@@ -119,7 +119,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
-      return token;
+      // Keep token minimal to avoid header size issues
+      return {
+        id: token.id,
+        email: token.email,
+        name: token.name,
+        role: token.role,
+        sub: token.sub,
+        iat: token.iat,
+        exp: token.exp,
+        jti: token.jti,
+      };
     },
     async session({ session, token }) {
       if (session.user) {
