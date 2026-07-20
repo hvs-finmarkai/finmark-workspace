@@ -12,6 +12,13 @@ export default async function DashboardPage() {
     include: { status: true },
   });
 
+  if (!currentUser) redirect('/login');
+
+  // If user hasn't completed onboarding (no designation set), redirect to onboarding
+  if (!currentUser.designation) {
+    redirect('/onboarding');
+  }
+
   const allUsers = await prisma.user.findMany({
     include: { status: true },
     orderBy: { name: 'asc' },
