@@ -24,6 +24,7 @@ export default async function DashboardPage() {
       currentUser={JSON.parse(JSON.stringify(currentUser))}
       allUsers={JSON.parse(JSON.stringify(allUsers))}
       isAdmin={isAdmin}
+      hasPassword={currentUser?.passwordEnabled || false}
     />
   );
 }

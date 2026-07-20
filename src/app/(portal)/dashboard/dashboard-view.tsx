@@ -30,6 +30,7 @@ interface DashboardViewProps {
   currentUser: UserWithStatus;
   allUsers: UserWithStatus[];
   isAdmin?: boolean;
+  hasPassword?: boolean;
 }
 
 const STATUS_OPTIONS = [
@@ -78,9 +79,13 @@ function getStatusLabel(status: string) {
   }
 }
 
-export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin }: DashboardViewProps) {
+export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin, hasPassword }: DashboardViewProps) {
   const [myStatus, setMyStatus] = useState(currentUser?.status?.status || 'OFFLINE');
   const [statusMessage, setStatusMessage] = useState(currentUser?.status?.statusMessage || '');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMsg, setPasswordMsg] = useState('');
+  const [passwordSet, setPasswordSet] = useState(hasPassword || false);
   const [loading, setLoading] = useState(false);
   const [allUsers, setAllUsers] = useState(initialUsers);
 
@@ -205,6 +210,52 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin }: 
             </button>
           </div>
         </motion.section>
+
+        {!passwordSet && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.05 }}
+            className="bg-blue-50 dark:bg-blue-500/5 rounded-2xl border border-blue-200 dark:border-blue-500/20 p-6"
+          >
+            <h2 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-1">Set a Password</h2>
+            <p className="text-xs text-blue-700 dark:text-blue-400 mb-4">Create a password so you can login without Google next time.</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="password"
+                placeholder="New password (min 8 chars)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-[#0a0a1a] border border-blue-200 dark:border-blue-500/20 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              />
+              <input
+                type="password"
+                placeholder="Confirm password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-[#0a0a1a] border border-blue-200 dark:border-blue-500/20 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              />
+              <button
+                onClick={async () => {
+                  setPasswordMsg('');
+                  if (newPassword.length < 8) { setPasswordMsg('Min 8 characters'); return; }
+                  if (newPassword !== confirmPassword) { setPasswordMsg('Passwords do not match'); return; }
+                  const res = await fetch('/api/auth/password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: newPassword, confirmPassword }),
+                  });
+                  if (res.ok) { setPasswordSet(true); setPasswordMsg('Password set!'); setNewPassword(''); setConfirmPassword(''); }
+                  else { setPasswordMsg('Error setting password'); }
+                }}
+                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Set
+              </button>
+            </div>
+            {passwordMsg && <p className={`text-xs mt-2 ${passwordMsg === 'Password set!' ? 'text-green-600' : 'text-red-500'}`}>{passwordMsg}</p>}
+          </motion.section>
+        )}
 
         <motion.section
           initial={{ opacity: 0, y: 10 }}
