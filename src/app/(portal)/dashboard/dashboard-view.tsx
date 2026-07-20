@@ -336,18 +336,15 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin, ha
                           <span className="ml-2 text-xs text-purple-500">(You)</span>
                         )}
                       </p>
-                      {user.department && (
-                        <p className="text-xs text-purple-600 dark:text-purple-400 font-medium truncate">
-                          {user.department}
-                        </p>
-                      )}
-                      {user.status?.statusMessage ? (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {user.designation || user.email}
+                        {user.department && (
+                          <span className="text-purple-600 dark:text-purple-400 font-medium"> • {user.department}</span>
+                        )}
+                      </p>
+                      {user.status?.statusMessage && (
                         <p className="text-xs text-gray-400 dark:text-gray-500 truncate italic">
                           {user.status.statusMessage}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {user.designation || user.email}
                         </p>
                       )}
                     </div>
