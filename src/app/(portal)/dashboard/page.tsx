@@ -1,46 +1,29 @@
-"use client";
+import { auth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import prisma from '@/lib/prisma';
+import { DashboardView } from './dashboard-view';
 
-import { useSession } from "next-auth/react";
-import { getGreeting } from "@/lib/utils";
-import { StatusCard } from "@/components/dashboard/status-card";
-import { StatsRow } from "@/components/dashboard/stats-row";
-import { ProjectsCard } from "@/components/dashboard/projects-card";
-import { MeetingsCard } from "@/components/dashboard/meetings-card";
-import { AnnouncementsCard } from "@/components/dashboard/announcements-card";
-import { QuickLinks } from "@/components/dashboard/quick-links";
+export default async function DashboardPage() {
+  const session = await auth();
+  if (!session?.user) redirect('/login');
 
-export default function DashboardPage() {
-  const { data: session } = useSession();
-  const greeting = getGreeting();
-  const firstName = session?.user?.name?.split(" ")[0] || "User";
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: { status: true },
+  });
+
+  const allUsers = await prisma.user.findMany({
+    include: { status: true },
+    orderBy: { name: 'asc' },
+  });
+
+  const isAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN';
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[hsl(var(--foreground))]">
-            {greeting}, {firstName} 👋
-          </h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Here&apos;s what&apos;s happening today.
-          </p>
-        </div>
-        <div className="w-full sm:w-72">
-          <StatusCard />
-        </div>
-      </div>
-
-      <StatsRow />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ProjectsCard />
-        <MeetingsCard />
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <AnnouncementsCard />
-        <QuickLinks />
-      </div>
-    </div>
+    <DashboardView
+      currentUser={JSON.parse(JSON.stringify(currentUser))}
+      allUsers={JSON.parse(JSON.stringify(allUsers))}
+      isAdmin={isAdmin}
+    />
   );
 }

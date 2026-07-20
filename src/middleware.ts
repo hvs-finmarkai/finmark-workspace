@@ -29,7 +29,9 @@ export default auth((req) => {
     }
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  response.headers.set('x-next-pathname', pathname);
+  return response;
 });
 
 export const config = {

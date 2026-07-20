@@ -47,6 +47,8 @@ model User {
   department      String?
   designation     String?
   phone           String?
+  skills          String?
+  about           String?   @db.Text
   passwordHash    String?
   googleEnabled   Boolean   @default(true)
   passwordEnabled Boolean   @default(false)
