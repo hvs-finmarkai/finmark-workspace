@@ -211,6 +211,9 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin, ha
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{currentUser?.name || 'Employee'}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.email}</p>
+                {currentUser?.department && (
+                  <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">{currentUser.department}</p>
+                )}
               </div>
             </div>
             <button
@@ -333,6 +336,11 @@ export function DashboardView({ currentUser, allUsers: initialUsers, isAdmin, ha
                           <span className="ml-2 text-xs text-purple-500">(You)</span>
                         )}
                       </p>
+                      {user.department && (
+                        <p className="text-xs text-purple-600 dark:text-purple-400 font-medium truncate">
+                          {user.department}
+                        </p>
+                      )}
                       {user.status?.statusMessage ? (
                         <p className="text-xs text-gray-400 dark:text-gray-500 truncate italic">
                           {user.status.statusMessage}
